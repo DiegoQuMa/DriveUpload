@@ -15,45 +15,33 @@ namespace BeeckerLab_Drive
     {
 
 
-        static async Task Main(string[] args)
+        static void Main(string[] args)
         {
-            string path = "1nPFSsAY4thQfJnmzzos6zG0pp7pCC2Td";
+
+            //Console.WriteLine("Insert Drive folder ID");
+            string DrivePath = "1nPFSsAY4thQfJnmzzos6zG0pp7pCC2Td";/*"1nPFSsAY4thQfJnmzzos6zG0pp7pCC2Td"*/
             string credentialsPath = "credentials.json";
-            string FilePaths =  "image.jpg" ;
-            //CargadeArchivos(path,credentialsPath,FilePaths);
-            // Directory.GetFile - Obtener Path 
+            //Console.WriteLine("Insert Local Folder");
+            string LocalPath = @"D:\TestImages";
+            
+            
 
-            var credential = GoogleCredential.FromFile(credentialsPath)
-                .CreateScoped(DriveService.ScopeConstants.Drive);
+            
 
-            var service = new DriveService(new BaseClientService.Initializer()
-            {
-                HttpClientInitializer = credential
-            });
+            //string[] ItemList = GetFilesByExtension(LocalPath, extension);
+            string[] ItemList = {"image2.png",".jpg"};
 
-            var fileMetadata = new Google.Apis.Drive.v3.Data.File()
-            {
-                Name = "Test Upload1.jpg",
-                Parents = new List<string>() { "1nPFSsAY4thQfJnmzzos6zG0pp7pCC2Td" }
-            };
 
-            string uploadedFileId;
 
-              using (var fsSource = new FileStream(FilePaths,FileMode.Open,FileAccess.Read))
-            {
-                var request = service.Files.Create(fileMetadata, fsSource, "");
-                request.Fields = "*";
-                var results =  await request.UploadAsync(CancellationToken.None);
 
-                if(results.Status == Google.Apis.Upload.UploadStatus.Failed)
-                {
-                    Console.WriteLine($"Error uploading file: {results.Exception.Message}");
-                }
-                uploadedFileId = request.ResponseBody?.Id;
-            }
+            CargadeArchivos(DrivePath, credentialsPath, ItemList, LocalPath);
+                // Directory.GetFile - Obtener Path 
+            
 
-            var uploadedFile = await service.Files.Get(uploadedFileId).ExecuteAsync();
-            Console.WriteLine($"{uploadedFile.Id} {uploadedFile.Name}{uploadedFile.MimeType} {uploadedFile.Parents?.FirstOrDefault()}");
+
+
+
+
 
 
 
@@ -62,7 +50,7 @@ namespace BeeckerLab_Drive
 
 
 
-        public static Google.Apis.Drive.v3.Data.File CargadeArchivos(string folderID, string credentialsPath, string[] FilePaths)
+        public static void CargadeArchivos(string folderID, string credentialsPath, string[] ItemList, string LocalPath)
         {
             try
             {
@@ -71,15 +59,31 @@ namespace BeeckerLab_Drive
 
                 // Create Drive API service.
                 var service =  CreateService(credential);
-                
 
 
-                // Upload File
-                foreach (var filePath in FilePaths)
+
+                foreach (var item in ItemList)
+                {
+                    if (item.StartsWith("."))
+                    {
+                        ObtenerArchivosPorFiltro(LocalPath, item);
+                    }
+                    else
+                    {
+                        ObtenerArchivosPorFiltro(LocalPath,item);
+                    }
+                }
+
+                        // Upload File
+                        foreach (var filePath in ItemList)
                 {
                     // Get File Data
-                    var fileMetadata = GetFileData(filePath, folderID);
-                    
+                    var fileMetadata =  new Google.Apis.Drive.v3.Data.File()
+                    {
+                        Name = Path.GetFileName(filePath),
+                        Parents = new List<string> { folderID }
+                    };
+
                     FilesResource.CreateMediaUpload request;
                     // Create a new file on drive.
                     using (var stream = new FileStream(filePath,
@@ -93,14 +97,14 @@ namespace BeeckerLab_Drive
                     }
                     var file = request.ResponseBody;
                     // Prints the uploaded file id.
-                    Console.WriteLine("File ID: " + file.Id);
-                    return file;
+                    Console.WriteLine($"{file.Id} {file.Name}{file.MimeType} {file.Parents?.FirstOrDefault()}");
+                    
 
                 }
             }
-
             catch (Exception e)
             {
+                Console.WriteLine(e.Message);   
                 
                 if (e is AggregateException)
                 {
@@ -110,17 +114,14 @@ namespace BeeckerLab_Drive
                 {
                     Console.WriteLine("File not found");
                 }
-                else if (e is DirectoryNotFoundException)
-                {
-                    Console.WriteLine("Directory Not found");
-                }
+                
                 else
                 {
-                    throw;
+                    throw new Exception("La carpeta con el ID " + folderID + " no existe.");
                 }
             }
             
-            return null;
+            
 
 
 
@@ -163,7 +164,64 @@ namespace BeeckerLab_Drive
             return fileMetadata;
         }
 
-    }
+        public static string[] GetFilesbyFolder(string LocalPath )
+        {
+            //if (Directory.Exists(LocalPath) == false)
+            //{
+            //    Console.WriteLine("La ruta de la carpeta " + LocalPath + " no existe.");
+            //    System.Environment.Exit(0);
+
+            //}
+            try
+            {
+                string[] ItemList = Directory.GetFiles(LocalPath);
+                return ItemList;
+            }
+
+            catch (Exception e)
+            {
+                if (e is DirectoryNotFoundException)
+                {
+                    
+                    throw new Exception("La ruta de la carpeta " + LocalPath + " no existe.");
+
+                }
+            }
+            
+            return null;
+
+
+        }
+
+        public static string[] GetFilesByExtension(string LocalPath,string extension)
+        {
+
+            Console.Write(LocalPath);
+            string[] ItemList = Directory.GetFiles(LocalPath, "*"+extension);
+            return ItemList;
+        }
+
+        public static string[] GetFilesByName(string LocalPath, string Name)
+        {
+            
+
+            string[] ItemList = Directory.GetFiles(LocalPath,  Name + "*");
+            return ItemList;
+        }
+        static List<string> ObtenerArchivosPorFiltro(string rutaCarpeta, string filtro)
+        {
+
+            // Enumera todos los archivos en la carpeta local que coinciden parcialmente con el filtro.
+            var archivos = Directory.GetFiles(rutaCarpeta)
+                .Where(f => Path.GetFileName(f).IndexOf(filtro, StringComparison.OrdinalIgnoreCase) >= 0)
+                .ToList();
+
+            return archivos;
+        }
+
+
+
+        }
     
     
 }
