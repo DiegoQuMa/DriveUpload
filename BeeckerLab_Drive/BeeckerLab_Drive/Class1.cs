@@ -3,40 +3,42 @@ using Google.Apis.Drive.v3;
 using Google.Apis.Services;
 using System;
 using System.IO;
-using System.Threading;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 namespace BeeckerLab_Drive
 {
     public class Drive_CargaDeArchivos
     {
-        static void Main(string[] args)
+        
+
+        /* Metodo principal para cargar archivos a drive.
+            Folder_ID - ID de la carpeta de drive.
+            JSON_PATH - Ruta local del archivo JSON.
+            ITEM_LIST - Nombre de archivos especificos.
+            LOCAL_PATH - Ruta de la carpeta local.
+         */
+        public string Carga_De_Archivos(string FOLDER_ID, string JSON_PATH, string[] ITEM_LIST, string LOCAL_PATH)
         {
-            string FOLDER_ID = "1nPFSsAY4thQfJnmzzos6zG0pp7pCC2Td";
-            string JSON_PATH = "credentials.json";
-            string LOCAL_PATH = @"D:\TestImages";
-            string[] ITEM_LIST = { "image.jpg", "xd.xls", "image2.png" };
-            Console.WriteLine(Carga_De_Archivos(FOLDER_ID, JSON_PATH, ITEM_LIST, LOCAL_PATH));
-        }
-        public static string Carga_De_Archivos(string FOLDER_ID, string JSON_PATH, string[] ITEM_LIST, string LOCAL_PATH)
-        {
+            // Validar si los argumentos estan completos.
             Validar_Arguments(FOLDER_ID, JSON_PATH, LOCAL_PATH);
-            ITEM_LIST = Eliminar_Repetidos(ITEM_LIST);
+            
             try
             {
+                ITEM_LIST = Eliminar_Repetidos(ITEM_LIST);
                 int FILES_COUNT = 0;
-                // Get Credentials
+                // Obtener Credenciales con el archivo JSON.
                 GoogleCredential CREDENTIAL = Get_Credentials(JSON_PATH);
-                // Create Drive API SERVICE.
+                // Crear un servicio de Drive.
                 var SERVICE = Create_Service(CREDENTIAL);
-                // Upload by Folder
+                // Cargar archivos por ruta de Folder
                 if (ITEM_LIST.Length < 1)
                 {
-                    // Get Files
-                    ITEM_LIST = Get_FilesbyFolder(LOCAL_PATH);
+                    // Obtener archivos por ruta de folder
+                    ITEM_LIST = Get_Files_by_Folder(LOCAL_PATH);
+                    // Eliminar archivos repetidos
                     ITEM_LIST = Eliminar_Repetidos(ITEM_LIST);
+                    // Cargar archivos a drive.
                     foreach (var FILEPATH in ITEM_LIST)
                     {
                         Upload_Files(SERVICE, FILEPATH, FOLDER_ID);
@@ -48,24 +50,29 @@ namespace BeeckerLab_Drive
                 
                 foreach (var ITEM in ITEM_LIST)
                 {
-                    //Get Files by Extension
+                    // Obtener archivos por extension.
                     if (ITEM.StartsWith("."))
                     {
-                        ITEM_LIST = Get_FilesByExtension(LOCAL_PATH, ITEM);
+                        ITEM_LIST = Get_Files_By_Extension(LOCAL_PATH, ITEM);
+                        
                     }
                     
-                    // Get specific Files by name
+                    // Obtener archivos por nombre
                     else
                     {
-                        ITEM_LIST = Get_FilesByName(LOCAL_PATH, ITEM);
+                        ITEM_LIST = Get_Files_By_Name(LOCAL_PATH, ITEM);
+                        
                     }
-                    // Upload File
+                    // Eliminar archivos repetidos
+                    ITEM_LIST = Eliminar_Repetidos(ITEM_LIST);
+                    // Cargar archivos a Drive
                     foreach (var FILEPATH in ITEM_LIST)
                     {
                         Upload_Files(SERVICE, FILEPATH, FOLDER_ID);
                         FILES_COUNT++;
                     }
                 }
+                // Notificacion de cuantos archivos se cargaron, y ejecucion exitosa.
                 return $"Se descargaron {FILES_COUNT} archivos \n Ejecucion Exitosa";
                 
             }
@@ -74,11 +81,11 @@ namespace BeeckerLab_Drive
                 Console.WriteLine(e.Message);
                 if (e is AggregateException)
                 {
-                    throw new Exception("Credential Not found");
+                    throw new Exception("Credenciales/Json no encontradas");
                 }
                 else if (e is FileNotFoundException)
                 {
-                    throw new Exception("File not found");
+                    throw new Exception("Archivo no encontrado");
                 }
                 else
                 {
@@ -87,7 +94,7 @@ namespace BeeckerLab_Drive
             }
         }
 
-        // Method to Upload Files to drive
+        // Metodo para subir archivos a drive.
         public static void Upload_Files(DriveService SERVICE, string FILEPATH, string FOLDER_ID)
         {
             var fileMetadata = new Google.Apis.Drive.v3.Data.File()
@@ -96,23 +103,23 @@ namespace BeeckerLab_Drive
                 Parents = new List<string> { FOLDER_ID }
             };
             FilesResource.CreateMediaUpload request;
-            // Create a new file on drive.
+            // Crear nuevo archivo en Drive
             using (var stream = new FileStream(FILEPATH,
                        FileMode.Open))
             {
-                // Create a new file, with metadata and stream.
+                // Crear nuevo archivo, con su metadata y stream.
                 request = SERVICE.Files.Create(
                     fileMetadata, stream, "");
                 request.Fields = "id";
                 request.Upload();
             }
             
-            // Prints the uploaded file id.
+            
             
             
         }
 
-        // Method to Get Google Credentials
+        // Metodo para obtener las credenciales de Google en base el JSON.
         public static GoogleCredential Get_Credentials(string JSON_PATH)
         {
             GoogleCredential CREDENTIAL;
@@ -126,7 +133,7 @@ namespace BeeckerLab_Drive
             return CREDENTIAL;
         }
 
-        // Method to create an Google Server Instance
+        // Metodo para generar un servicio del servidor Google.
         public static DriveService Create_Service(GoogleCredential CREDENTIAL)
         {
             var SERVICE = new DriveService(new BaseClientService.Initializer
@@ -137,8 +144,8 @@ namespace BeeckerLab_Drive
             return SERVICE;
         }
 
-        // Create Drive File Metadata 
-        public static Google.Apis.Drive.v3.Data.File Get_FileData(string FILEPATH, string FOLDER_ID)
+        // Metodo para crear Metadata de un archivo para drive.
+        public static Google.Apis.Drive.v3.Data.File Get_File_Data(string FILEPATH, string FOLDER_ID)
         {
             var fileMetadata = new Google.Apis.Drive.v3.Data.File()
             {
@@ -148,8 +155,8 @@ namespace BeeckerLab_Drive
             return fileMetadata;
         }
 
-        // Method to Get files from a local folder
-        public static string[] Get_FilesbyFolder(string LOCAL_PATH)
+        // Metodo para obtener archivos de un folder local.
+        public static string[] Get_Files_by_Folder(string LOCAL_PATH)
         {
             
             try
@@ -167,15 +174,15 @@ namespace BeeckerLab_Drive
             return null;
         }
 
-        // Method to get files by EXTENSION from local folder
-        public static string[] Get_FilesByExtension(string LOCAL_PATH, string EXTENSION)
+        // Metodo para obtener archivos por extension de una carpeta local.
+        public static string[] Get_Files_By_Extension(string LOCAL_PATH, string EXTENSION)
         {
             string[] ITEM_LIST = Directory.GetFiles(LOCAL_PATH, "*" + EXTENSION);
             return ITEM_LIST;
         }
 
-        //Method to get files by name from local folder
-        public static string[] Get_FilesByName(string LOCAL_PATH, string NAME)
+        // Metodo para obtener archivos por nombre de una carpeta local.
+        public static string[] Get_Files_By_Name(string LOCAL_PATH, string NAME)
         {
             if (!Directory.EnumerateFileSystemEntries(LOCAL_PATH).Any())
             {
@@ -188,7 +195,7 @@ namespace BeeckerLab_Drive
             
         }
 
-        // Method to validate arguments data.
+        // Metodo para validar los argumentos.
         static string Validar_Arguments(string FOLDER_ID, string JSON_PATH, string LocalPathn)
         {
             string[] args = { FOLDER_ID, JSON_PATH, LocalPathn };
@@ -202,7 +209,7 @@ namespace BeeckerLab_Drive
             return null;
         }
 
-        // Method to delete duplicated files
+        // Metodo para eliminar archivos duplicados.
         static T[] Eliminar_Repetidos<T>(T[] ITEM_LIST)
         {
             List<T> listaSinRepetidos = new List<T>();
