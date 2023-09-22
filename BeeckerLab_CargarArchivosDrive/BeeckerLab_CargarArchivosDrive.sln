@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.6.33829.357
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BeeckerLab_CargarArchivosDrive", "BeeckerLab_CargarArchivosDrive\BeeckerLab_CargarArchivosDrive.csproj", "{40C4687F-4AB4-4AF9-8369-92EAD349A2BB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{40C4687F-4AB4-4AF9-8369-92EAD349A2BB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{40C4687F-4AB4-4AF9-8369-92EAD349A2BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{40C4687F-4AB4-4AF9-8369-92EAD349A2BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{40C4687F-4AB4-4AF9-8369-92EAD349A2BB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {61E757B2-1F54-4990-B3CF-4126368CD6ED}
+	EndGlobalSection
+EndGlobal
